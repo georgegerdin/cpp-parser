@@ -9,7 +9,6 @@
 #include <vector>
 #include <string>
 #include <string_view>
-#include <boost/smart_ptr/intrusive_ptr.hpp>
 #include "ast.hh"
 #include "lexer.hh"
 #include "preprocessor.hh"

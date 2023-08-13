@@ -4,36 +4,36 @@
 #include <optional>
 #include <functional>
 #include <cassert>
-#include <fmt/format.h>
+#include <fmt/core.h>
 
 
 template<typename... Parameters>
-void dbgln(const fmt::format_string<Parameters...> fmtstr, Parameters &&... parameters) {
-    auto result = fmt::format(fmtstr, std::forward<Parameters>(parameters)...);
+void dbgln(const char* fmtstr, Parameters &&... parameters) {
+    auto result = fmt::vformat(fmtstr, fmt::make_format_args(parameters...));
     printf("%s\n", result.c_str() );
 }
 
 template<typename... Parameters>
-void out(FILE* file, fmt::format_string<Parameters...> fmtstr, Parameters &&... parameters) {
-    auto result = fmt::format(fmtstr, std::forward<Parameters>(parameters)...);
+void out(FILE* file, const char* fmtstr, Parameters &&... parameters) {
+    auto result = fmt::vformat(fmtstr, fmt::make_format_args(parameters...));
     fprintf(file, "%s", result.c_str() );
 }
 
 template<typename... Parameters>
-void outln(FILE* file, fmt::format_string<Parameters...> fmtstr, Parameters &&... parameters) {
-    auto result = fmt::format(fmtstr, std::forward<Parameters>(parameters)...);
+void outln(FILE* file, const char* fmtstr, Parameters &&... parameters) {
+    auto result = fmt::vformat(fmtstr, fmt::make_format_args(parameters...));
     fprintf(file, "%s\n", result.c_str() );
 }
 
 template<typename... Parameters>
-void out(fmt::format_string<Parameters...> fmtstr, Parameters &&... parameters) {
-    auto result = fmt::format(fmtstr, std::forward<Parameters>(parameters)...);
+void out(const char* fmtstr, Parameters &&... parameters) {
+    auto result = fmt::vformat(fmtstr, fmt::make_format_args(parameters...));
     printf("%s", result.c_str() );
 }
 
 template<typename... Parameters>
-void outln(fmt::format_string<Parameters...> fmtstr, Parameters &&... parameters) {
-    auto result = fmt::format(fmtstr, std::forward<Parameters>(parameters)...);
+void outln(const char* fmtstr, Parameters &&... parameters) {
+    auto result = fmt::vformat(fmtstr, fmt::make_format_args(parameters...));
     printf("%s\n", result.c_str() );
 }
 
