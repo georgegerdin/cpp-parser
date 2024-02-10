@@ -62,9 +62,10 @@ namespace Cpp {
             declarations.push_back(arg);
         }
 
-        if (m_definition)
-            declarations.insert(declarations.end(), m_definition->declarations().begin(), m_definition->declarations().end());
-
+        if (m_definition) {
+            auto definition_declarations = m_definition->declarations();
+            declarations.insert(declarations.end(), definition_declarations.begin(), definition_declarations.end());
+        }
         return declarations;
     }
 
@@ -166,7 +167,8 @@ namespace Cpp {
     {
         std::vector<intrusive_ptr<Declaration const>> declarations;
         for (auto& statement : m_statements) {
-            declarations.insert(declarations.end(), statement->declarations().begin(), statement->declarations().end());
+            auto statement_declarations = statement->declarations();
+            declarations.insert(declarations.end(), statement_declarations.begin(), statement_declarations.end());
         }
         return declarations;
     }
@@ -472,10 +474,14 @@ namespace Cpp {
     std::vector<intrusive_ptr<Declaration const>> ForStatement::declarations() const
     {
         std::vector<intrusive_ptr<Declaration const>> declarations;
-        if (m_init)
-            declarations.insert(declarations.end(), m_init->declarations().begin(), m_init->declarations().end());
-        if (m_body)
-            declarations.insert(declarations.end(), m_body->declarations().begin(), m_body->declarations().end());
+        if (m_init) {
+            auto init_declarations = m_init->declarations();
+            declarations.insert(declarations.end(), init_declarations.begin(), init_declarations.end());
+        }
+        if (m_body) {
+            auto body_declarations = m_body->declarations();
+            declarations.insert(declarations.end(), body_declarations.begin(), body_declarations.end());
+        }
         return declarations;
     }
 
@@ -483,7 +489,8 @@ namespace Cpp {
     {
         std::vector<intrusive_ptr<Declaration const>> declarations;
         for (auto& statement : m_statements) {
-            declarations.insert(declarations.end(), statement->declarations().begin(), statement->declarations().end());
+            auto statement_declarations = statement->declarations();
+            declarations.insert(declarations.end(), statement_declarations.begin(), statement_declarations.end());
         }
         return declarations;
     }
@@ -511,12 +518,19 @@ namespace Cpp {
     std::vector<intrusive_ptr<Declaration const>> IfStatement::declarations() const
     {
         std::vector<intrusive_ptr<Declaration const>> declarations;
-        if (m_predicate)
-            declarations.insert(declarations.end(), m_predicate->declarations().begin(), m_predicate->declarations().end());
-        if (m_then)
-            declarations.insert(declarations.end(), m_then->declarations().begin(), m_then->declarations().end());
-        if (m_else)
-            declarations.insert(declarations.end(), m_else->declarations().begin(), m_else->declarations().end());
+        if (m_predicate) {
+            auto predicate_declarations = m_predicate->declarations();
+            declarations.insert(declarations.end(), predicate_declarations.begin(), predicate_declarations.end());
+        }
+        if (m_then) {
+            auto then_declarations = m_then->declarations();
+            declarations.insert(declarations.end(), then_declarations.begin(), then_declarations.end());
+        }
+        if (m_else) {
+            auto else_declarations = m_else->declarations();
+            declarations.insert(declarations.end(), else_declarations.begin(), else_declarations.end());
+        }
+
         return declarations;
     }
 
