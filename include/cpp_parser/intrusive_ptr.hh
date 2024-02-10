@@ -162,8 +162,8 @@ public:
 
     bool is_null() const noexcept
     {
-        if(px == nullptr) return false;
-        return true;
+        if(px == nullptr) return true;
+        return false;
     }
 
 private:
