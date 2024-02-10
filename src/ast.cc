@@ -50,7 +50,7 @@ namespace Cpp {
         }
         print_indent(output, indent + 1);
         outln(output, ")");
-        if (!m_definition) {
+        if (!m_definition.is_null()) {
             m_definition->dump(output, indent + 1);
         }
     }
