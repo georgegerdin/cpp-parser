@@ -29,3 +29,5 @@ target_link_libraries(cpp-parser PUBLIC fmt::fmt)
 target_include_directories(cpp-parser PUBLIC include)
 target_link_libraries(cpp-parser-example PUBLIC cpp-parser)
 target_link_libraries(test-cpp-parser PUBLIC cpp-parser)
+
+file(WRITE "${CMAKE_BINARY_DIR}/current_list_dir.txt" "${CMAKE_CURRENT_LIST_DIR}")
