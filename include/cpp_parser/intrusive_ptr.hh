@@ -32,6 +32,14 @@ public:
     {
     }
 
+    template<class U>
+    requires(std::is_convertible_v<U*, T*>)
+    intrusive_ptr( U const& p)
+        : px(const_cast<T*>(static_cast<T const*>(&p)))
+    {
+        intrusive_ptr_add_ref(px);
+    }
+
     intrusive_ptr( T * p, bool add_ref = true ) : px( p )
     {
         if( px != 0 && add_ref ) intrusive_ptr_add_ref( px );
