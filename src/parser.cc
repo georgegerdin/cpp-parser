@@ -1307,7 +1307,7 @@ intrusive_ptr<Type const> Parser::parse_type(ASTNode const& parent)
         type->set_end(previous_token_end());
         consume();
         auto fn_type = create_ast_node<FunctionType>(parent, type->start(), position());
-        fn_type->set_return_type(type);
+        fn_type->set_return_type(*type);
         type->set_parent(*fn_type);
         if (auto parameters = parse_parameter_list(*type); parameters.has_value())
             fn_type->set_parameters(parameters.value());

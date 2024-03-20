@@ -6,10 +6,16 @@
 
 #pragma once
 
+#include <cassert>
 #include <optional>
 #include <string_view>
-#include "util.hh"
+#include <string>
+#include <vector>
+#include "cpp_parser/util.hh"
+#include "cpp_parser/intrusive_ptr.hh"
 #include "lexer.hh"
+
+using namespace std::literals;
 
 namespace Cpp {
 
@@ -23,64 +29,64 @@ class Statement;
 class Name;
 
 class ASTNode : public intrusive_ref_counter<ASTNode> {
-    public:
-        virtual ~ASTNode() = default;
-        virtual std::string_view class_name() const = 0;
-        virtual void dump(FILE* = stdout, size_t indent = 0) const;
+public:
+    virtual ~ASTNode() = default;
+    virtual std::string_view class_name() const = 0;
+    virtual void dump(FILE* = stdout, size_t indent = 0) const;
 
-        template<typename T>
-        bool fast_is() const = delete;
+    template<typename T>
+    bool fast_is() const = delete;
 
-        ASTNode const* parent() const { return m_parent; }
-        Position start() const
-        {
-            assert(m_start.has_value());
-            return m_start.value();
-        }
-        Position end() const
-        {
-            assert(m_end.has_value());
-            return m_end.value();
-        }
-        std::string const& filename() const
-        {
-            return m_filename;
-        }
-        void set_end(Position const& end) { m_end = end; }
-        void set_parent(ASTNode const& parent) { m_parent = &parent; }
+    ASTNode const* parent() const { return m_parent; }
+    Position start() const
+    {
+        assert(m_start.has_value());
+        return m_start.value();
+    }
+    Position end() const
+    {
+        assert(m_end.has_value());
+        return m_end.value();
+    }
+    std::string const& filename() const
+    {
+        return m_filename;
+    }
+    void set_end(Position const& end) { m_end = end; }
+    void set_parent(ASTNode const& parent) { m_parent = &parent; }
 
-        virtual std::vector<intrusive_ptr<Declaration const>> declarations() const { return {}; }
+    virtual std::vector<intrusive_ptr<Declaration const>> declarations() const { return {}; }
 
-        virtual bool is_identifier() const { return false; }
-        virtual bool is_member_expression() const { return false; }
-        virtual bool is_variable_or_parameter_declaration() const { return false; }
-        virtual bool is_function_call() const { return false; }
-        virtual bool is_type() const { return false; }
-        virtual bool is_declaration() const { return false; }
-        virtual bool is_name() const { return false; }
-        virtual bool is_dummy_node() const { return false; }
+    virtual bool is_identifier() const { return false; }
+    virtual bool is_member_expression() const { return false; }
+    virtual bool is_variable_or_parameter_declaration() const { return false; }
+    virtual bool is_function_call() const { return false; }
+    virtual bool is_type() const { return false; }
+    virtual bool is_declaration() const { return false; }
+    virtual bool is_name() const { return false; }
+    virtual bool is_dummy_node() const { return false; }
 
-    protected:
-        ASTNode(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
-                : m_parent(parent)
-                , m_start(start)
-                , m_end(end)
-                , m_filename(filename)
-        {
-        }
+protected:
+    ASTNode(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
+            : m_parent(parent)
+            , m_start(start)
+            , m_end(end)
+            , m_filename(filename)
+    {
+    }
 
-    private:
-        ASTNode const* m_parent { nullptr };
-        std::optional<Position> m_start;
-        std::optional<Position> m_end;
-        std::string m_filename;
-    };
+private:
+    ASTNode const* m_parent { nullptr };
+    std::optional<Position> m_start;
+    std::optional<Position> m_end;
+    std::string m_filename;
+};
 
 class TranslationUnit : public ASTNode {
 
 public:
     virtual ~TranslationUnit() override = default;
-    virtual std::string_view class_name() const override { return "TranslationUnit"; }
+    virtual std::string_view class_name() const override { return "TranslationUnit"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override { return m_declarations; }
 
@@ -89,7 +95,7 @@ public:
     {
     }
 
-    void set_declarations(std::vector<intrusive_ptr<Declaration const>>&& declarations) { m_declarations = move(declarations); }
+    void set_declarations(std::vector<intrusive_ptr<Declaration const>>&& declarations) { m_declarations = std::move(declarations); }
 
 private:
     std::vector<intrusive_ptr<Declaration const>> m_declarations;
@@ -98,7 +104,7 @@ private:
 class Statement : public ASTNode {
 public:
     virtual ~Statement() override = default;
-    virtual std::string_view class_name() const override { return "Statement"; }
+    virtual std::string_view class_name() const override { return "Statement"sv; }
 
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override;
 
@@ -122,7 +128,7 @@ public:
     virtual bool is_namespace() const { return false; }
     virtual bool is_enum() const { return false; }
     bool is_member() const { return parent() != nullptr && parent()->is_declaration() && assert_cast<Declaration>(parent())->is_struct_or_class(); }
-    Name const* name() const { return m_name.get(); }
+    Name const* name() const { return m_name; }
     std::string_view full_name() const;
     void set_name(intrusive_ptr<Name const> name) { m_name = std::move(name); }
 
@@ -140,7 +146,7 @@ class InvalidDeclaration : public Declaration {
 
 public:
     virtual ~InvalidDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "InvalidDeclaration"; }
+    virtual std::string_view class_name() const override { return "InvalidDeclaration"sv; }
     InvalidDeclaration(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
             : Declaration(parent, start, end, filename)
     {
@@ -150,7 +156,7 @@ public:
 class FunctionDeclaration : public Declaration {
 public:
     virtual ~FunctionDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "FunctionDeclaration"; }
+    virtual std::string_view class_name() const override { return "FunctionDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_function() const override { return true; }
     virtual bool is_constructor() const { return false; }
@@ -184,7 +190,7 @@ public:
     virtual ~VariableOrParameterDeclaration() override = default;
     virtual bool is_variable_or_parameter_declaration() const override { return true; }
 
-    void set_type(intrusive_ptr<Type const>&& type) { m_type =std::move(type); }
+    void set_type(intrusive_ptr<Type const>&& type) { m_type = std::move(type); }
     Type const* type() const { return m_type.get(); }
 
 protected:
@@ -199,7 +205,7 @@ protected:
 class Parameter : public VariableOrParameterDeclaration {
 public:
     virtual ~Parameter() override = default;
-    virtual std::string_view class_name() const override { return "Parameter"; }
+    virtual std::string_view class_name() const override { return "Parameter"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_parameter() const override { return true; }
 
@@ -219,7 +225,7 @@ private:
 class Type : public ASTNode {
 public:
     virtual ~Type() override = default;
-    virtual std::string_view class_name() const override { return "Type"; }
+    virtual std::string_view class_name() const override { return "Type"sv; }
     virtual bool is_type() const override { return true; }
     virtual bool is_templatized() const { return false; }
     virtual bool is_named_type() const { return false; }
@@ -229,7 +235,7 @@ public:
     bool is_auto() const { return m_is_auto; }
     void set_auto(bool is_auto) { m_is_auto = is_auto; }
     std::vector<std::string_view> const& qualifiers() const { return m_qualifiers; }
-    void set_qualifiers(std::vector<std::string_view>&& qualifiers) { m_qualifiers =std::move(qualifiers); }
+    void set_qualifiers(std::vector<std::string_view>&& qualifiers) { m_qualifiers = std::move(qualifiers); }
 
 protected:
     Type(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -245,7 +251,7 @@ private:
 class NamedType : public Type {
 public:
     virtual ~NamedType() override = default;
-    virtual std::string_view class_name() const override { return "NamedType"; }
+    virtual std::string_view class_name() const override { return "NamedType"sv; }
     virtual std::string to_string() const override;
     virtual bool is_named_type() const override { return true; }
 
@@ -255,7 +261,7 @@ public:
     }
 
     Name const* name() const { return m_name.get(); }
-    void set_name(intrusive_ptr<Name const>&& name) { m_name =std::move(name); }
+    void set_name(intrusive_ptr<Name const>&& name) { m_name = std::move(name); }
 
 private:
     intrusive_ptr<Name const> m_name;
@@ -264,7 +270,7 @@ private:
 class Pointer : public Type {
 public:
     virtual ~Pointer() override = default;
-    virtual std::string_view class_name() const override { return "Pointer"; }
+    virtual std::string_view class_name() const override { return "Pointer"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual std::string to_string() const override;
 
@@ -274,7 +280,7 @@ public:
     }
 
     Type const* pointee() const { return m_pointee.get(); }
-    void set_pointee(intrusive_ptr<Type const>&& pointee) { m_pointee =std::move(pointee); }
+    void set_pointee(intrusive_ptr<Type const>&& pointee) { m_pointee = std::move(pointee); }
 
 private:
     intrusive_ptr<Type const> m_pointee;
@@ -283,7 +289,7 @@ private:
 class Reference : public Type {
 public:
     virtual ~Reference() override = default;
-    virtual std::string_view class_name() const override { return "Reference"; }
+    virtual std::string_view class_name() const override { return "Reference"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual std::string to_string() const override;
 
@@ -299,7 +305,7 @@ public:
     }
 
     Type const* referenced_type() const { return m_referenced_type.get(); }
-    void set_referenced_type(intrusive_ptr<Type const>&& pointee) { m_referenced_type =std::move(pointee); }
+    void set_referenced_type(intrusive_ptr<Type const>&& pointee) { m_referenced_type = std::move(pointee); }
     Kind kind() const { return m_kind; }
 
 private:
@@ -310,7 +316,7 @@ private:
 class FunctionType : public Type {
 public:
     virtual ~FunctionType() override = default;
-    virtual std::string_view class_name() const override { return "FunctionType"; }
+    virtual std::string_view class_name() const override { return "FunctionType"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual std::string to_string() const override;
 
@@ -319,8 +325,8 @@ public:
     {
     }
 
-    void set_return_type(intrusive_ptr<Type const>&& type) { m_return_type = type; }
-    void set_parameters(std::vector<intrusive_ptr<Parameter const>> parameters) { m_parameters =std::move(parameters); }
+    void set_return_type(Type& type) { m_return_type = type; }
+    void set_parameters(std::vector<intrusive_ptr<Parameter const>> parameters) { m_parameters = std::move(parameters); }
 
 private:
     intrusive_ptr<Type const> m_return_type;
@@ -330,7 +336,7 @@ private:
 class FunctionDefinition : public ASTNode {
 public:
     virtual ~FunctionDefinition() override = default;
-    virtual std::string_view class_name() const override { return "FunctionDefinition"; }
+    virtual std::string_view class_name() const override { return "FunctionDefinition"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     FunctionDefinition(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -339,8 +345,8 @@ public:
     }
 
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override;
-    std::vector<intrusive_ptr<Statement const>> const& statements() { return m_statements; }
-    void add_statement(intrusive_ptr<Statement const>&& statement) { m_statements.emplace_back(std::move(statement)); }
+    std::vector<intrusive_ptr<Statement const>> const& statements() const { return m_statements; }
+    void add_statement(intrusive_ptr<Statement const>&& statement) { m_statements.push_back(std::move(statement)); }
 
 private:
     std::vector<intrusive_ptr<Statement const>> m_statements;
@@ -349,7 +355,7 @@ private:
 class InvalidStatement : public Statement {
 public:
     virtual ~InvalidStatement() override = default;
-    virtual std::string_view class_name() const override { return "InvalidStatement"; }
+    virtual std::string_view class_name() const override { return "InvalidStatement"sv; }
     InvalidStatement(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
             : Statement(parent, start, end, filename)
     {
@@ -359,7 +365,7 @@ public:
 class Expression : public Statement {
 public:
     virtual ~Expression() override = default;
-    virtual std::string_view class_name() const override { return "Expression"; }
+    virtual std::string_view class_name() const override { return "Expression"sv; }
 
 protected:
     Expression(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -371,7 +377,7 @@ protected:
 class InvalidExpression : public Expression {
 public:
     virtual ~InvalidExpression() override = default;
-    virtual std::string_view class_name() const override { return "InvalidExpression"; }
+    virtual std::string_view class_name() const override { return "InvalidExpression"sv; }
     InvalidExpression(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
             : Expression(parent, start, end, filename)
     {
@@ -381,7 +387,7 @@ public:
 class VariableDeclaration : public VariableOrParameterDeclaration {
 public:
     virtual ~VariableDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "VariableDeclaration"; }
+    virtual std::string_view class_name() const override { return "VariableDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     VariableDeclaration(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -391,8 +397,8 @@ public:
 
     virtual bool is_variable_declaration() const override { return true; }
 
-    Expression const* initial_value() const { return m_initial_value.get(); }
-    void set_initial_value(intrusive_ptr<Expression const>&& initial_value) { m_initial_value =std::move(initial_value); }
+    Expression const* initial_value() const { return m_initial_value; }
+    void set_initial_value(intrusive_ptr<Expression const>&& initial_value) { m_initial_value = std::move(initial_value); }
 
 private:
     intrusive_ptr<Expression const> m_initial_value;
@@ -401,7 +407,7 @@ private:
 class Identifier : public Expression {
 public:
     virtual ~Identifier() override = default;
-    virtual std::string_view class_name() const override { return "Identifier"; }
+    virtual std::string_view class_name() const override { return "Identifier"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     Identifier(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename, std::string_view name)
@@ -417,7 +423,7 @@ public:
     virtual bool is_identifier() const override { return true; }
 
     std::string_view name() const { return m_name; }
-    void set_name(std::string_view&& name) { m_name =std::move(name); }
+    void set_name(std::string_view&& name) { m_name = std::move(name); }
 
 private:
     std::string_view m_name;
@@ -426,7 +432,7 @@ private:
 class Name : public Expression {
 public:
     virtual ~Name() override = default;
-    virtual std::string_view class_name() const override { return "Name"; }
+    virtual std::string_view class_name() const override { return "Name"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_name() const override { return true; }
     virtual bool is_templatized() const { return false; }
@@ -439,10 +445,10 @@ public:
     virtual std::string_view full_name() const;
 
     Identifier const* name() const { return m_name.get(); }
-    void set_name(intrusive_ptr<Identifier const>&& name) { m_name =std::move(name); }
+    void set_name(intrusive_ptr<Identifier const>&& name) { m_name = std::move(name); }
     std::vector<intrusive_ptr<Identifier const>> const& scope() const { return m_scope; }
-    void set_scope(std::vector<intrusive_ptr<Identifier const>> scope) { m_scope =std::move(scope); }
-    void add_to_scope(intrusive_ptr<Identifier const>&& part) { m_scope.emplace_back(std::move(part)); }
+    void set_scope(std::vector<intrusive_ptr<Identifier const>> scope) { m_scope = std::move(scope); }
+    void add_to_scope(intrusive_ptr<Identifier const>&& part) { m_scope.push_back(std::move(part)); }
 
 private:
     intrusive_ptr<Identifier const> m_name;
@@ -453,7 +459,7 @@ private:
 class SizedName : public Name {
 public:
     virtual ~SizedName() override = default;
-    virtual std::string_view class_name() const override { return "SizedName"; }
+    virtual std::string_view class_name() const override { return "SizedName"sv; }
     virtual bool is_sized() const override { return true; }
     void dump(FILE* output, size_t indent) const override;
 
@@ -462,7 +468,7 @@ public:
     {
     }
 
-    void append_dimension(std::string_view dim) { m_dimensions.emplace_back(dim); }
+    void append_dimension(std::string_view dim) { m_dimensions.push_back(dim); }
 
 private:
     std::vector<std::string_view> m_dimensions;
@@ -472,7 +478,7 @@ private:
 class TemplatizedName : public Name {
 public:
     virtual ~TemplatizedName() override = default;
-    virtual std::string_view class_name() const override { return "TemplatizedName"; }
+    virtual std::string_view class_name() const override { return "TemplatizedName"sv; }
     virtual bool is_templatized() const override { return true; }
     virtual std::string_view full_name() const override;
 
@@ -481,7 +487,7 @@ public:
     {
     }
 
-    void add_template_argument(intrusive_ptr<Type const>&& type) { m_template_arguments.emplace_back(std::move(type)); }
+    void add_template_argument(intrusive_ptr<Type const>&& type) { m_template_arguments.push_back(std::move(type)); }
 
 private:
     std::vector<intrusive_ptr<Type const>> m_template_arguments;
@@ -491,7 +497,7 @@ private:
 class NumericLiteral : public Expression {
 public:
     virtual ~NumericLiteral() override = default;
-    virtual std::string_view class_name() const override { return "NumericLiteral"; }
+    virtual std::string_view class_name() const override { return "NumericLiteral"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     NumericLiteral(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename, std::string_view value)
@@ -500,6 +506,8 @@ public:
     {
     }
 
+    std::string_view value() const { return m_value; }
+
 private:
     std::string_view m_value;
 };
@@ -507,7 +515,7 @@ private:
 class NullPointerLiteral : public Expression {
 public:
     virtual ~NullPointerLiteral() override = default;
-    virtual std::string_view class_name() const override { return "NullPointerLiteral"; }
+    virtual std::string_view class_name() const override { return "NullPointerLiteral"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     NullPointerLiteral(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -519,7 +527,7 @@ public:
 class BooleanLiteral : public Expression {
 public:
     virtual ~BooleanLiteral() override = default;
-    virtual std::string_view class_name() const override { return "BooleanLiteral"; }
+    virtual std::string_view class_name() const override { return "BooleanLiteral"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     BooleanLiteral(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename, bool value)
@@ -562,7 +570,7 @@ public:
     }
 
     virtual ~BinaryExpression() override = default;
-    virtual std::string_view class_name() const override { return "BinaryExpression"; }
+    virtual std::string_view class_name() const override { return "BinaryExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     BinaryOp op() const { return m_op; }
@@ -592,14 +600,14 @@ public:
     }
 
     virtual ~AssignmentExpression() override = default;
-    virtual std::string_view class_name() const override { return "AssignmentExpression"; }
+    virtual std::string_view class_name() const override { return "AssignmentExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     AssignmentOp op() const { return m_op; }
     void set_op(AssignmentOp op) { m_op = op; }
-    Expression const* lhs() const { return m_lhs.get(); }
+    Expression const* lhs() const { return m_lhs; }
     void set_lhs(intrusive_ptr<Expression const>&& e) { m_lhs = std::move(e); }
-    Expression const* rhs() const { return m_rhs.get(); }
+    Expression const* rhs() const { return m_rhs; }
     void set_rhs(intrusive_ptr<Expression const>&& e) { m_rhs = std::move(e); }
 
 private:
@@ -616,14 +624,14 @@ public:
     }
 
     virtual ~FunctionCall() override = default;
-    virtual std::string_view class_name() const override { return "FunctionCall"; }
+    virtual std::string_view class_name() const override { return "FunctionCall"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_function_call() const override { return true; }
 
     Expression const* callee() const { return m_callee.get(); }
     void set_callee(intrusive_ptr<Expression const>&& callee) { m_callee = std::move(callee); }
 
-    void add_argument(intrusive_ptr<Expression const>&& arg) { m_arguments.emplace_back(std::move(arg)); }
+    void add_argument(intrusive_ptr<Expression const>&& arg) { m_arguments.push_back(std::move(arg)); }
     std::vector<intrusive_ptr<Expression const>> const& arguments() const { return m_arguments; }
 
 private:
@@ -639,7 +647,7 @@ public:
     }
 
     ~StringLiteral() override = default;
-    virtual std::string_view class_name() const override { return "StringLiteral"; }
+    virtual std::string_view class_name() const override { return "StringLiteral"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     std::string const& value() const { return m_value; }
@@ -652,7 +660,7 @@ private:
 class ReturnStatement : public Statement {
 public:
     virtual ~ReturnStatement() override = default;
-    virtual std::string_view class_name() const override { return "ReturnStatement"; }
+    virtual std::string_view class_name() const override { return "ReturnStatement"sv; }
 
     ReturnStatement(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
             : Statement(parent, start, end, filename)
@@ -670,7 +678,7 @@ private:
 class EnumDeclaration : public Declaration {
 public:
     virtual ~EnumDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "EnumDeclaration"; }
+    virtual std::string_view class_name() const override { return "EnumDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_enum() const override { return true; }
 
@@ -685,7 +693,7 @@ public:
     };
 
     void set_type(Type type) { m_type = type; }
-    void add_entry(std::string_view entry, intrusive_ptr<Expression const> value = nullptr) { m_entries.emplace_back(EnumerationEntry{ entry, std::move(value) }); }
+    void add_entry(std::string_view entry, intrusive_ptr<Expression const> value = nullptr) { m_entries.push_back({ entry, std::move(value) }); }
 
 private:
     Type m_type { Type::RegularEnum };
@@ -699,7 +707,7 @@ private:
 class StructOrClassDeclaration : public Declaration {
 public:
     virtual ~StructOrClassDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "StructOrClassDeclaration"; }
+    virtual std::string_view class_name() const override { return "StructOrClassDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_struct_or_class() const override { return true; }
     virtual bool is_struct() const override { return m_type == Type::Struct; }
@@ -747,7 +755,7 @@ public:
     }
 
     virtual ~UnaryExpression() override = default;
-    virtual std::string_view class_name() const override { return "UnaryExpression"; }
+    virtual std::string_view class_name() const override { return "UnaryExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     void set_op(UnaryOp op) { m_op = op; }
@@ -766,7 +774,7 @@ public:
     }
 
     virtual ~MemberExpression() override = default;
-    virtual std::string_view class_name() const override { return "MemberExpression"; }
+    virtual std::string_view class_name() const override { return "MemberExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_member_expression() const override { return true; }
 
@@ -788,7 +796,7 @@ public:
     }
 
     virtual ~ForStatement() override = default;
-    virtual std::string_view class_name() const override { return "ForStatement"; }
+    virtual std::string_view class_name() const override { return "ForStatement"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override;
@@ -814,12 +822,14 @@ public:
     }
 
     virtual ~BlockStatement() override = default;
-    virtual std::string_view class_name() const override { return "BlockStatement"; }
+    virtual std::string_view class_name() const override { return "BlockStatement"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override;
 
-    void add_statement(intrusive_ptr<Statement const>&& statement) { m_statements.emplace_back(std::move(statement)); }
+    void add_statement(intrusive_ptr<Statement const>&& statement) { m_statements.push_back(std::move(statement)); }
+
+    std::vector<intrusive_ptr<Statement const>> const& statements() const { return m_statements; }
 
 private:
     std::vector<intrusive_ptr<Statement const>> m_statements;
@@ -833,7 +843,7 @@ public:
     }
 
     virtual ~Comment() override = default;
-    virtual std::string_view class_name() const override { return "Comment"; }
+    virtual std::string_view class_name() const override { return "Comment"sv; }
 };
 
 class IfStatement : public Statement {
@@ -844,7 +854,7 @@ public:
     }
 
     virtual ~IfStatement() override = default;
-    virtual std::string_view class_name() const override { return "IfStatement"; }
+    virtual std::string_view class_name() const override { return "IfStatement"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override;
 
@@ -852,6 +862,7 @@ public:
     void set_then_statement(intrusive_ptr<Statement const>&& then) { m_then = std::move(then); }
     void set_else_statement(intrusive_ptr<Statement const>&& _else) { m_else = std::move(_else); }
 
+    Expression const* predicate() const { return m_predicate.get(); }
     Statement const* then_statement() const { return m_then.get(); }
     Statement const* else_statement() const { return m_else.get(); }
 
@@ -864,7 +875,7 @@ private:
 class NamespaceDeclaration : public Declaration {
 public:
     virtual ~NamespaceDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "NamespaceDeclaration"; }
+    virtual std::string_view class_name() const override { return "NamespaceDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_namespace() const override { return true; }
 
@@ -874,7 +885,7 @@ public:
     }
 
     virtual std::vector<intrusive_ptr<Declaration const>> declarations() const override { return m_declarations; }
-    void add_declaration(intrusive_ptr<Declaration const>&& declaration) { m_declarations.emplace_back(std::move(declaration)); }
+    void add_declaration(intrusive_ptr<Declaration const>&& declaration) { m_declarations.push_back(std::move(declaration)); }
 
 private:
     std::vector<intrusive_ptr<Declaration const>> m_declarations;
@@ -888,7 +899,7 @@ public:
     }
 
     virtual ~CppCastExpression() override = default;
-    virtual std::string_view class_name() const override { return "CppCastExpression"; }
+    virtual std::string_view class_name() const override { return "CppCastExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     void set_cast_type(std::string_view cast_type) { m_cast_type = std::move(cast_type); }
@@ -909,7 +920,7 @@ public:
     }
 
     virtual ~CStyleCastExpression() override = default;
-    virtual std::string_view class_name() const override { return "CStyleCastExpression"; }
+    virtual std::string_view class_name() const override { return "CStyleCastExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     void set_type(intrusive_ptr<Type const>&& type) { m_type = std::move(type); }
@@ -928,7 +939,7 @@ public:
     }
 
     virtual ~SizeofExpression() override = default;
-    virtual std::string_view class_name() const override { return "SizeofExpression"; }
+    virtual std::string_view class_name() const override { return "SizeofExpression"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     void set_type(intrusive_ptr<Type const>&& type) { m_type = std::move(type); }
@@ -945,10 +956,10 @@ public:
     }
 
     virtual ~BracedInitList() override = default;
-    virtual std::string_view class_name() const override { return "BracedInitList"; }
+    virtual std::string_view class_name() const override { return "BracedInitList"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
-    void add_expression(intrusive_ptr<Expression const>&& exp) { m_expressions.emplace_back(std::move(exp)); }
+    void add_expression(intrusive_ptr<Expression const>&& exp) { m_expressions.push_back(std::move(exp)); }
 
 private:
     std::vector<intrusive_ptr<Expression const>> m_expressions;
@@ -961,14 +972,14 @@ public:
     {
     }
     virtual bool is_dummy_node() const override { return true; }
-    virtual std::string_view class_name() const override { return "DummyAstNode"; }
+    virtual std::string_view class_name() const override { return "DummyAstNode"sv; }
     virtual void dump(FILE* = stdout, size_t = 0) const override { }
 };
 
 class Constructor : public FunctionDeclaration {
 public:
     virtual ~Constructor() override = default;
-    virtual std::string_view class_name() const override { return "Constructor"; }
+    virtual std::string_view class_name() const override { return "Constructor"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_constructor() const override { return true; }
 
@@ -981,7 +992,7 @@ public:
 class Destructor : public FunctionDeclaration {
 public:
     virtual ~Destructor() override = default;
-    virtual std::string_view class_name() const override { return "Destructor"; }
+    virtual std::string_view class_name() const override { return "Destructor"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
     virtual bool is_destructor() const override { return true; }
 
@@ -994,7 +1005,7 @@ public:
 class UsingNamespaceDeclaration : public Declaration {
 public:
     virtual ~UsingNamespaceDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "UsingNamespaceDeclaration"; }
+    virtual std::string_view class_name() const override { return "UsingNamespaceDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     UsingNamespaceDeclaration(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -1006,7 +1017,7 @@ public:
 class TypedefDeclaration : public Declaration {
 public:
     virtual ~TypedefDeclaration() override = default;
-    virtual std::string_view class_name() const override { return "TypedefDeclaration"; }
+    virtual std::string_view class_name() const override { return "TypedefDeclaration"sv; }
     virtual void dump(FILE* = stdout, size_t indent = 0) const override;
 
     TypedefDeclaration(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
@@ -1014,7 +1025,7 @@ public:
     {
     }
 
-    void set_alias(Type const& alias) { m_alias.reset(&alias, true); }
+    void set_alias(Type const& alias) { m_alias = alias; }
     Type const* alias() const { return m_alias.get(); }
 
 private:
