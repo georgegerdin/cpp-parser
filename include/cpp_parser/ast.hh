@@ -938,6 +938,23 @@ private:
     intrusive_ptr<Type const> m_type;
 };
 
+class NewExpression : public Expression {
+public:
+    NewExpression(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)
+            : Expression(parent, start, end, filename)
+    {
+    }
+
+    virtual ~NewExpression() override = default;
+    virtual std::string_view class_name() const override { return "NewExpression"; }
+    virtual void dump(FILE* = stdout, size_t indent = 0) const override;
+
+    void set_type(intrusive_ptr<Type const>&& type) { m_type = std::move(type); }
+
+private:
+    intrusive_ptr<Type const> m_type;
+};
+
 class BracedInitList : public Expression {
 public:
     BracedInitList(ASTNode const* parent, std::optional<Position> start, std::optional<Position> end, std::string const& filename)

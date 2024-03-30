@@ -87,6 +87,7 @@ namespace Cpp {
         bool match_cpp_cast_expression();
         bool match_c_style_cast_expression();
         bool match_sizeof_expression();
+        bool match_new_expression();
         bool match_braced_init_list();
         bool match_type();
         bool match_named_type();
@@ -130,6 +131,7 @@ namespace Cpp {
         intrusive_ptr<Name const> parse_name(ASTNode const& parent);
         intrusive_ptr<CppCastExpression const> parse_cpp_cast_expression(ASTNode const& parent);
         intrusive_ptr<SizeofExpression const> parse_sizeof_expression(ASTNode const& parent);
+        intrusive_ptr<NewExpression const> parse_new_expression(ASTNode const& parent);
         intrusive_ptr<BracedInitList const> parse_braced_init_list(ASTNode const& parent);
         intrusive_ptr<CStyleCastExpression const> parse_c_style_cast_expression(ASTNode const& parent);
         std::vector<intrusive_ptr<Declaration const>> parse_class_members(StructOrClassDeclaration& parent);

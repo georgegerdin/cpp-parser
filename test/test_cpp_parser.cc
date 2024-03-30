@@ -61,7 +61,7 @@ void test_unary_expression() {
     auto c_string = "int main() {     \n"
                     "    &renault;    \n"
                     "    *renault;    \n"
-                    "    *new T;      \n"
+                    "    *new T(1);   \n"
                     "}                \n"
     ;
     Cpp::Preprocessor preprocessor("test.cc", c_string);

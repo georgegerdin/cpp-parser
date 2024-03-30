@@ -632,6 +632,13 @@ namespace Cpp {
             m_type->dump(output, indent + 1);
     }
 
+    void NewExpression::dump(FILE* output, size_t indent) const
+    {
+        ASTNode::dump(output, indent);
+        if (m_type)
+            m_type->dump(output, indent + 1);
+    }
+
     void BracedInitList::dump(FILE* output, size_t indent) const
     {
         ASTNode::dump(output, indent);

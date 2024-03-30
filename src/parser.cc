@@ -448,6 +448,9 @@ intrusive_ptr<Expression const> Parser::parse_primary_expression(ASTNode const& 
     if (match_sizeof_expression())
         return parse_sizeof_expression(parent);
 
+    if (match_new_expression())
+        return parse_new_expression(parent);
+
     if (match_braced_init_list())
         return parse_braced_init_list(parent);
 
@@ -1606,6 +1609,11 @@ bool Parser::match_sizeof_expression()
     return match_keyword("sizeof");
 }
 
+bool Parser::match_new_expression()
+{
+    return match_keyword("new");
+}
+
 intrusive_ptr<SizeofExpression const> Parser::parse_sizeof_expression(ASTNode const& parent)
 {
     auto exp = create_ast_node<SizeofExpression>(parent, position(), {});
@@ -1613,6 +1621,16 @@ intrusive_ptr<SizeofExpression const> Parser::parse_sizeof_expression(ASTNode co
     consume(Token::Type::LeftParen);
     exp->set_type(parse_type(parent));
     consume(Token::Type::RightParen);
+    exp->set_end(position());
+    return exp;
+}
+
+
+intrusive_ptr<NewExpression const> Parser::parse_new_expression(ASTNode const& parent)
+{
+    auto exp = create_ast_node<NewExpression>(parent, position(), {});
+    consume(Token::Type::Keyword);
+    exp->set_type(parse_type(parent));
     exp->set_end(position());
     return exp;
 }
