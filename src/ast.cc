@@ -143,7 +143,7 @@ namespace Cpp {
             print_indent(output, indent + 1);
             outln(output, "...");
         }
-        if (!m_name) {
+        if (m_name) {
             print_indent(output, indent);
             outln(output, "{}", m_name->full_name());
         }
@@ -383,6 +383,9 @@ namespace Cpp {
                 break;
             case UnaryOp::Address:
                 op_string = "&";
+                break;
+            case UnaryOp::Dereference:
+                op_string = "*";
                 break;
             default:
                 op_string = "<invalid>";
