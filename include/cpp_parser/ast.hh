@@ -737,6 +737,7 @@ enum class UnaryOp {
     Minus,
     PlusPlus,
     Address,
+    Dereference,
 };
 
 class UnaryExpression : public Expression {

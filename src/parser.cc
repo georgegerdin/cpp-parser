@@ -488,7 +488,8 @@ bool Parser::match_unary_expression()
            || type == Token::Type::Tilde
            || type == Token::Type::Plus
            || type == Token::Type::Minus
-           || type == Token::Type::And;
+           || type == Token::Type::And
+           || type == Token::Type::Asterisk;
 }
 
 intrusive_ptr<UnaryExpression const> Parser::parse_unary_expression(ASTNode const& parent)
@@ -514,6 +515,9 @@ intrusive_ptr<UnaryExpression const> Parser::parse_unary_expression(ASTNode cons
             break;
         case Token::Type::And:
             op = UnaryOp::Address;
+            break;
+        case Token::Type::Asterisk:
+            op = UnaryOp::Dereference;
             break;
         default:
             break;
@@ -593,7 +597,9 @@ intrusive_ptr<Expression const> Parser::parse_secondary_expression(ASTNode const
             const_cast<Expression&>(*lhs).set_parent(*func);
             func->set_callee(std::move(lhs));
             while (peek().type() != Token::Type::RightParen && !eof()) {
-                func->add_argument(parse_expression(*func));
+                auto expr = parse_expression(*func);
+                expr->dump();
+                func->add_argument(std::move(expr));
                 if (peek().type() == Token::Type::Comma)
                     consume(Token::Type::Comma);
             }
