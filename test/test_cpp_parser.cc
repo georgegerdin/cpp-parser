@@ -73,8 +73,8 @@ void test_unary_expression() {
 }
 
 int main(int, char** argv) {
-    //test_search_ast();
-    //test_template_function();
+    test_search_ast();
+    test_template_function();
     test_unary_expression();
     printf("All tests passed.\n");
     return 0;
