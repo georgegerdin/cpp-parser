@@ -600,9 +600,7 @@ intrusive_ptr<Expression const> Parser::parse_secondary_expression(ASTNode const
             const_cast<Expression&>(*lhs).set_parent(*func);
             func->set_callee(std::move(lhs));
             while (peek().type() != Token::Type::RightParen && !eof()) {
-                auto expr = parse_expression(*func);
-                expr->dump();
-                func->add_argument(std::move(expr));
+                func->add_argument(parse_expression(*func));
                 if (peek().type() == Token::Type::Comma)
                     consume(Token::Type::Comma);
             }
