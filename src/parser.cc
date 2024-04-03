@@ -716,12 +716,10 @@ bool Parser::match_class_declaration()
 
     consume(Token::Type::Identifier);
 
-    auto has_final = match_keyword("final");
+    if(match_keyword("final"))
+        consume();
 
-    if (peek(has_final ? 1 : 0).type() == Token::Type::Colon) {
-        if (has_final)
-            consume();
-
+    if (peek().type() == Token::Type::Colon) {
         do {
             consume();
 
