@@ -428,11 +428,11 @@ namespace Cpp {
         if (m_return_type)
             m_return_type->dump(output, indent + 1);
         print_indent(output, indent + 1);
-        outln("(");
+        outln(output, "(");
         for (auto& parameter : m_parameters)
             parameter->dump(output, indent + 2);
         print_indent(output, indent + 1);
-        outln(")");
+        outln(output, ")");
     }
 
     void MemberExpression::dump(FILE* output, size_t indent) const
