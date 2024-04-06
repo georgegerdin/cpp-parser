@@ -654,6 +654,10 @@ std::optional<Parser::DeclarationType> Parser::match_declaration_in_translation_
         return DeclarationType::Namespace;
     if (match_variable_declaration())
         return DeclarationType::Variable;
+    if (match_constructor())
+        return DeclarationType::Constructor;
+    if (match_destructor())
+        return DeclarationType::Destructor;
     if (match_using_namespace_declaration())
         return DeclarationType::UsingNamespace;
     if (match_using_type_declaration())
@@ -1701,6 +1705,51 @@ bool Parser::match_constructor(std::string_view class_name)
     return (peek(Token::Type::Semicolon).has_value() || peek(Token::Type::LeftCurly).has_value());
 }
 
+
+bool Parser::match_constructor() {
+    save_state();
+    ScopeGuard state_guard = [this] { load_state(); };
+
+    std::vector<Token> name_tokens;
+    bool first = true;
+    do {
+        if(!first) {
+            if(!match(Token::Type::ColonColon))
+                return false;
+            consume();
+        }
+        else
+            first = false;
+
+        if(match(Token::Type::Tilde))
+            return false; // destructor
+        name_tokens.push_back(consume());
+    } while(!peek(Token::Type::LeftParen).has_value());
+
+    if(name_tokens.size() < 2)
+        return false;
+
+    // The last and second to last token in the name should be the same
+    if(name_tokens.back().text() != name_tokens.end()[-2].text())
+        return false;
+
+    if (!peek(Token::Type::LeftParen).has_value())
+        return false;
+    consume();
+
+    while (consume().type() != Token::Type::RightParen && !eof()) { };
+
+    if(match(Token::Type::Colon)) {
+        // consume member initializer list
+        while (peek().type() != Token::Type::LeftCurly && !eof()) {
+            consume();
+        };
+    }
+
+    return (peek(Token::Type::Semicolon).has_value() || peek(Token::Type::LeftCurly).has_value());
+}
+
+
 bool Parser::match_destructor(std::string_view class_name)
 {
     save_state();
@@ -1718,6 +1767,56 @@ bool Parser::match_destructor(std::string_view class_name)
     if (token.text() != class_name)
         return false;
     consume();
+
+    if (!peek(Token::Type::LeftParen).has_value())
+        return false;
+    consume();
+
+    while (consume().type() != Token::Type::RightParen && !eof()) { };
+
+    if (match_keyword("override"))
+        consume();
+
+    return (peek(Token::Type::Semicolon).has_value() || peek(Token::Type::LeftCurly).has_value());
+}
+
+bool Parser::match_destructor()
+{
+    save_state();
+    ScopeGuard state_guard = [this] { load_state(); };
+
+    std::vector<Token> name_tokens;
+    bool first = true;
+    bool tilde_found_on_the_last = false;
+    do {
+        if(!first) {
+            if(!match(Token::Type::ColonColon))
+                return false;
+            consume();
+        }
+        else
+            first = false;
+
+        if(match(Token::Type::Tilde)) {
+            tilde_found_on_the_last = true;
+            consume();
+        }
+        else {
+            tilde_found_on_the_last = false;
+        }
+
+        name_tokens.push_back(consume());
+    } while(!peek(Token::Type::LeftParen).has_value());
+
+    if (!tilde_found_on_the_last)
+        return false;
+
+    if(name_tokens.size() < 2)
+        return false;
+
+    // The last and second to last token in the name should be the same
+    if(name_tokens.back().text() != name_tokens.end()[-2].text())
+        return false;
 
     if (!peek(Token::Type::LeftParen).has_value())
         return false;
@@ -1757,6 +1856,14 @@ void Parser::parse_constructor_or_destructor_impl(FunctionDeclaration& func, Cto
         consume();
 
     // TODO: Parse =default, =delete.
+
+    if(type == CtorOrDtor::Ctor && match(Token::Type::Colon)) {
+        // consume member initializer list
+        // TODO: Save it in an AST node
+        while (peek().type() != Token::Type::LeftCurly && !eof()) {
+            consume();
+        };
+    }
 
     intrusive_ptr<FunctionDefinition const> body;
     Position ctor_end {};

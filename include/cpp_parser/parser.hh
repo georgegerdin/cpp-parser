@@ -93,7 +93,9 @@ namespace Cpp {
         bool match_named_type();
         bool match_access_specifier();
         bool match_constructor(std::string_view class_name);
+        bool match_constructor();
         bool match_destructor(std::string_view class_name);
+        bool match_destructor();
         bool match_using_namespace_declaration();
         bool match_typedef_declaration();
         bool match_using_type_declaration();

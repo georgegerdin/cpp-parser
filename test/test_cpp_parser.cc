@@ -88,11 +88,27 @@ void test_final() {
     translation_unit->dump();
 }
 
+
+void test_constructor() {
+    auto c_string = "S::S() : m(a) {        \n"
+                    "}               \n"
+                    "S::~S() {       \n"
+                    "}"
+    ;
+    Cpp::Preprocessor preprocessor("test.cc", c_string);
+    auto results = preprocessor.process_and_lex();
+    Cpp::Parser parser(results, "test.cc");
+    auto translation_unit = parser.parse();
+
+    translation_unit->dump();
+}
+
 int main(int, char** argv) {
     test_search_ast();
     test_template_function();
     test_unary_expression();
     test_final();
+    test_constructor();
     printf("All tests passed.\n");
     return 0;
 }
