@@ -1358,6 +1358,8 @@ intrusive_ptr<IfStatement const> Parser::parse_if_statement(ASTNode const& paren
     LOG_SCOPE();
     auto if_statement = create_ast_node<IfStatement>(parent, position(), {});
     consume(Token::Type::Keyword);
+    if(match_keyword("constexpr"))
+        consume();
     consume(Token::Type::LeftParen);
     if_statement->set_predicate(parse_expression(*if_statement));
     consume(Token::Type::RightParen);

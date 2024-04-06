@@ -102,6 +102,21 @@ void test_constructor() {
 
     translation_unit->dump();
 }
+void test_if_constexpr() {
+    auto c_string = "void foo() {                       \n"
+                    "    if (bar) {                     \n"
+                    "    }                              \n"
+                    "    if constexpr(bar) {            \n"
+                    "    }                              \n"
+                    "}"
+    ;
+    Cpp::Preprocessor preprocessor("test.cc", c_string);
+    auto results = preprocessor.process_and_lex();
+    Cpp::Parser parser(results, "test.cc");
+    auto translation_unit = parser.parse();
+
+    translation_unit->dump();
+}
 
 int main(int, char** argv) {
     test_search_ast();
@@ -109,6 +124,7 @@ int main(int, char** argv) {
     test_unary_expression();
     test_final();
     test_constructor();
+    test_if_constexpr();
     printf("All tests passed.\n");
     return 0;
 }
